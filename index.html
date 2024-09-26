@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Screenshot Generator</title>
+    <style>
+        canvas {
+            width: 400px;
+            height: 400px;
+        }
+        .buttons {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload your Minecraft Skin</h1>
+    <input type="file" id="skinInput" accept=".png" />
+    <canvas id="skinCanvas"></canvas>
+    <div class="buttons">
+        <button id="frontView">Front View</button>
+        <button id="backView">Back View</button>
+        <button id="download">Download Screenshot</button>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, skinMesh;
+
+        function init() {
+            // Setup scene
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({canvas: document.getElementById('skinCanvas')});
+            renderer.setSize(400, 400);
+            camera.position.z = 5;
+
+            // Load skin texture
+            const skinInput = document.getElementById('skinInput');
+            skinInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const texture = new THREE.TextureLoader().load(e.target.result);
+                    createSkin(texture);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function createSkin(texture) {
+            // Create a 3D model for the skin
+            const geometry = new THREE.BoxGeometry(1, 2, 1);
+            const material = new THREE.MeshBasicMaterial({ map: texture });
+            if (skinMesh) {
+                scene.remove(skinMesh);
+            }
+            skinMesh = new THREE.Mesh(geometry, material);
+            scene.add(skinMesh);
+            render();
+        }
+
+        function render() {
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+
+        document.getElementById('frontView').addEventListener('click', function() {
+            skinMesh.rotation.y = 0;
+        });
+
+        document.getElementById('backView').addEventListener('click', function() {
+            skinMesh.rotation.y = Math.PI;
+        });
+
+        document.getElementById('download').addEventListener('click', function() {
+            const link = document.createElement('a');
+            link.href = renderer.domElement.toDataURL('image/png');
+            link.download = 'skin_screenshot.png';
+            link.click();
+        });
+
+        init();
+    </script>
+</body>
+</html>
